@@ -8,7 +8,7 @@ import {
 import { get } from 'lodash';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as inlineCss from 'inline-css';
+import { inline } from '@css-inline/css-inline';
 
 /** Interfaces **/
 import { MailerOptions } from '../interfaces/mailer-options.interface';
@@ -21,7 +21,7 @@ export class EjsAdapter implements TemplateAdapter {
   } = {};
 
   private config: TemplateAdapterConfig = {
-    inlineCssOptions: { url: ' ' },
+    inlineCssOptions: {},
     inlineCssEnabled: true,
   };
 
@@ -31,15 +31,16 @@ export class EjsAdapter implements TemplateAdapter {
 
   public compile(mail: any, callback: any, mailerOptions: MailerOptions): void {
     const { context, template } = mail.data;
+    const templateBaseDir = get(mailerOptions, 'template.dir', '');
     const templateExt = path.extname(template) || '.ejs';
-    const templateName = path.basename(template, path.extname(template));
+    let templateName = path.basename(template, path.extname(template));
     const templateDir = path.isAbsolute(template)
       ? path.dirname(template)
-      : path.join(
-          get(mailerOptions, 'template.dir', ''),
-          path.dirname(template),
-        );
+      : path.join(templateBaseDir, path.dirname(template));
     const templatePath = path.join(templateDir, templateName + templateExt);
+    templateName = path
+      .relative(templateBaseDir, templatePath)
+      .replace(templateExt, '');
 
     if (!this.precompiledTemplates[templateName]) {
       try {
@@ -58,16 +59,15 @@ export class EjsAdapter implements TemplateAdapter {
 
     const render = (html: string) => {
       if (this.config.inlineCssEnabled) {
-        inlineCss(html, this.config.inlineCssOptions)
-          .then((html) => {
-            mail.data.html = html;
-            return callback();
-          })
-          .catch(callback);
+        try {
+          mail.data.html = inline(html, this.config.inlineCssOptions);
+        } catch (e) {
+          callback(e);
+        }
       } else {
         mail.data.html = html;
-        return callback();
       }
+      return callback();
     };
 
     if (typeof rendered === 'string') {

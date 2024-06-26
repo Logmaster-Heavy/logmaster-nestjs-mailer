@@ -217,11 +217,11 @@ describe('MailerService', () => {
     expect(send).toHaveBeenCalled();
     expect(lastMail.data.from).toBe('user1@example.test');
     expect(lastMail.data.html).toBe(
-      '<p>Handlebars test template. by Nest-modules TM</p>',
+      '<html><head></head><body><p>Handlebars test template. by Nest-modules TM</p></body></html>',
     );
   });
 
-  it('should compile template with the handlebars adapter with disabled inline-css', async () => {
+  it('should compile template with the handlebars adapter with disabled css-inline', async () => {
     let lastMail: MailMessage;
     const send = spyOnSmtpSend((mail: MailMessage) => {
       lastMail = mail;
@@ -254,7 +254,7 @@ describe('MailerService', () => {
     );
   });
 
-  it('should compile template with the handlebars adapter with enabled inline-css and media query', async () => {
+  it('should compile template with the handlebars adapter with enabled css-inline and media query', async () => {
     let lastMail: MailMessage;
     const send = spyOnSmtpSend((mail: MailMessage) => {
       lastMail = mail;
@@ -265,7 +265,7 @@ describe('MailerService', () => {
       template: {
         adapter: new HandlebarsAdapter(undefined, {
           inlineCssEnabled: true,
-          inlineCssOptions: { url: ' ', preserveMediaQueries: true },
+          inlineCssOptions: { },
         }),
       },
     });
@@ -285,8 +285,8 @@ describe('MailerService', () => {
     expect(lastMail.data.html).toContain(
       '@media only screen and (max-width:350px)',
     );
-    expect(lastMail.data.html).toContain(
-      '<p>Handlebars test template. by Nest-modules TM</p>',
+    expect(lastMail.data.html?.toString().replace(/\n/g, '')).toContain(
+      `<html><head><style data-css-inline=\"keep\" type=\"text/css\">  @media only screen and (max-width:350px) { p { font-size: 20px; } }</style></head><body><p>Handlebars test template. by Nest-modules TM</p></body></html>`
     );
   });
 
@@ -316,7 +316,7 @@ describe('MailerService', () => {
     expect(send).toHaveBeenCalled();
     expect(lastMail.data.from).toBe('user1@example.test');
     expect(lastMail.data.html).toBe(
-      '<p>Pug test template.</p><p>Hello World!</p>',
+      '<html><head></head><body><p>Pug test template.</p><p>Hello World!</p></body></html>',
     );
   });
 
@@ -346,7 +346,7 @@ describe('MailerService', () => {
     expect(send).toHaveBeenCalled();
     expect(lastMail.data.from).toBe('user1@example.test');
     expect(lastMail.data.html).toBe(
-      '<p>Ejs test template. by Nest-modules TM</p>',
+      '<html><head></head><body><p>Ejs test template. by Nest-modules TM</p></body></html>',
     );
   });
 
